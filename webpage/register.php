@@ -1,6 +1,36 @@
 <?php  
+	session_start();
+	$isPost = $_SERVER['REQUEST_METHOD'] == 'POST';
+	$action = isset($_REQUEST['action'])?$_REQUEST['action']:'';
 
-include('connection.php');
+	function redirect($path) {
+		header('Location: ' . $path, true, 301);
+		exit();
+	}
+
+	include('connection.php');
+
+	$username = '';
+	$fullname = '';
+	$pwd = '';
+	$confirm_pwd = '';
+	$email = '';
+
+	$usernamePattern='/^\w{4,}$/i';
+	$pwdPattern='/^\w{4,}$/i';
+	$namePattern='/^[a-z]+( [a-z]+)*$/i';
+	$emailPattern='/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i';
+
+	$isValid = TRUE;
+	$isOk = TRUE;
+
+	if($isPost) {
+		$username=$_REQUEST["username"];
+		$fullname=$_REQUEST["fullname"];
+		$pwd =$_REQUEST["pwd"];
+		$confirm_pwd =$_REQUEST["confirm_pwd"];
+		$email = $_REQUEST["email"];
+	}
 
 ?>
 
@@ -20,28 +50,47 @@ include('connection.php');
 				<ul class="form">
 					<li>
 						<label for="username">Username</label>
-						<input type="text" name="username" id="username" required/>
+						<input type="text" name="username" id="username" value="<?php $username ?>" required/>
+						<?php if ($isPost && !preg_match($usernamePattern, $username)): $isValid=false; ?>
+							<span class="error">Required field.</span>	
+						<?php endif ?>
 					</li>
 					<li>
 						<label for="fullname">Full Name</label>
-						<input type="text" name="fullname" id="fullname" required/>
+						<input type="text" name="fullname" id="fullname" value="<?php $fullname ?>" required/>
 					</li>
 					<li>
 						<label for="email">Email</label>
-						<input type="email" name="email" id="email" />
+						<input type="email" name="email" id="email" value="<?php $email ?>" />
+						<?php if ($isPost && !preg_match($emailPattern, $email)): $isValid=false; ?>
+							<span class="error">Not a valid email.</span>	
+						<?php endif ?>
 					</li>
 					<li>
 						<label for="pwd">Password</label>
-						<input type="password" name="pwd" id="pwd" required/>
+						<input type="password" name="pwd" id="pwd" value="<?= $pwd ?>" required/>
+						<?php if ($isPost && (!preg_match($pwdPattern, $pwd) || $pwd!=$confirm_pwd)): $isValid=false; ?>
+							<span class="error">Required field.</span>	
+						<?php endif ?>
 					</li>
 					<li>
 						<label for="confirm_pwd">Confirm Password</label>
-						<input type="password" name="confirm_pwd" id="confirm_pwd" required />
+						<input type="password" name="confirm_pwd" id="confirm_pwd" value="<?= $confirm_pwd ?>" required />
+
 					</li>
 					<li>
 						<input type="submit" value="Submit" /> &nbsp; Already registered? <a href="index.php">Login</a>
 					</li>
 				</ul>
 		</form>
+		<?php  
+				if($isPost && $isValid) {
+					$isOk= $User->addUser($username, $email, $pwd, $fullname);
+					if ($isOk) redirect('index.php');
+				}
+			?>
+			<?php if (!$isOk): ?>
+				<span class="error">This user exists in database!</span>
+			<?php endif ?>
 	</body>
 </html>
