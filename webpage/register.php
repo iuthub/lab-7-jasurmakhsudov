@@ -10,11 +10,20 @@
 
 	include('connection.php');
 
-	$username = '';
-	$fullname = '';
-	$pwd = '';
-	$confirm_pwd = '';
-	$email = '';
+	if(isset($_SESSION['isAuth'])){
+		$username = $_SESSION['user']['username'];
+		$fullname = $_SESSION['user']['fullname'];
+		$pwd = $_SESSION['user']['password'];;
+		$confirm_pwd = $_SESSION['user']['password'];;
+		$email = $_SESSION['user']['email'];
+	}else{
+
+		$username = '';
+		$fullname = '';
+		$pwd = '';
+		$confirm_pwd = '';
+		$email = '';
+	}
 
 	$usernamePattern='/^\w{4,}$/i';
 	$pwdPattern='/^\w{4,}$/i';
@@ -42,26 +51,25 @@
 	</head>
 	
 	<body>
-		<?php include('header.php'); ?>
-
+		
 		<h2>User Details Form</h2>
 		<h4>Please, fill below fields correctly</h4>
 		<form action="register.php" method="post">
 				<ul class="form">
 					<li>
 						<label for="username">Username</label>
-						<input type="text" name="username" id="username" value="<?php $username ?>" required/>
+						<input type="text" name="username" id="username" value="<?= $username ?>" required/>
 						<?php if ($isPost && !preg_match($usernamePattern, $username)): $isValid=false; ?>
 							<span class="error">Required field.</span>	
 						<?php endif ?>
 					</li>
 					<li>
 						<label for="fullname">Full Name</label>
-						<input type="text" name="fullname" id="fullname" value="<?php $fullname ?>" required/>
+						<input type="text" name="fullname" id="fullname" value="<?= $fullname ?>" required/>
 					</li>
 					<li>
 						<label for="email">Email</label>
-						<input type="email" name="email" id="email" value="<?php $email ?>" />
+						<input type="email" name="email" id="email" value="<?= $email ?>" />
 						<?php if ($isPost && !preg_match($emailPattern, $email)): $isValid=false; ?>
 							<span class="error">Not a valid email.</span>	
 						<?php endif ?>
@@ -84,8 +92,12 @@
 				</ul>
 		</form>
 		<?php  
-				if($isPost && $isValid) {
+				if($isPost && $isValid && !isset($_SESSION['isAuth'])) {
 					$isOk= $User->addUser($username, $email, $pwd, $fullname);
+					if ($isOk) redirect('index.php');
+				}elseif ($isPost && $isValid && isset($_SESSION['isAuth'])) {
+					$isOk= $User->modifyUser($_SESSION['user']['username'],$username, $email, $pwd, $fullname);
+					$_SESSION['user'] = $User->getUser($username);
 					if ($isOk) redirect('index.php');
 				}
 			?>
